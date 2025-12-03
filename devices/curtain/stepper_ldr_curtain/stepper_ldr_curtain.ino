@@ -1,30 +1,31 @@
 // 28BYJ-48 스텝모터와 LDR(조도센서) 기반 자동 커튼 제어
 #include <Stepper.h>
 
-// 자동 커튼 제어를 담당하는 클래스 (PascalCase)
 class CurtainController {
-public:                   // 생성자 시그니처 (외부에서 넘겨받는 값들)
-  CurtainController(      // 이 클래스의 “생성자 함수” 이름. new하거나 전역 변수로 만들 때 자동 호출됨.
-    int motorPin1,        // 괄호 안 인자들: 이 객체를 만들 때 필요한 설정값들
-    int motorPin2,        // ULN2003 보드에 연결된 스텝모터 제어용 아두이노 핀 번호 4개
+public:
+  CurtainController(
+    int motorPin1,
+    int motorPin2,
     int motorPin3,
     int motorPin4,
-    int lightSensorPin,   // LDR가 연결된 아날로그 핀 (여기선 A0)
-    int lightThreshold,   // 밝기 임계값 (예: 500)
-    long fullOpenSteps,   // 커튼을 완전히 여는 데 필요한 스텝 수 (예: 3L * 2048)
-    int motorRpm,         // 모터 속도 (RPM)
-    const char* deviceIdParam // 이 커튼 장치의 ID 문자열 (예: "curtain-01")
-  )   // 멤버 이니셜라이저 리스트 (내부 변수들을 초기화)
-    : stepsPerRevolution(2048),  // 멤버 변수 stepsPerRevolution를 2048로 설정, // 28BYJ-48 한 바퀴 스텝 수
-      stepper(stepsPerRevolution, motorPin1, motorPin2, motorPin3, motorPin4),  // Stepper 라이브러리 객체를 생성자 인자로 초기화, // “이 스텝모터는 2048스텝/회전이고, 이 핀들(8,10,9,11)을 쓴다”
-      ldrPin(lightSensorPin),    // 멤버 변수 ldrPin에 생성자 인자 lightSensorPin 값 저장`
-      threshold(lightThreshold), // threshold에 임계값 저장 (예: 500)
-      curtainMaxSteps(fullOpenSteps), // curtainMaxSteps에 최대 스텝 수 저장 (예: 3L * 2048)
-      currentStep(0),            // 시작할 때 커튼 위치를 0으로 설정 (완전히 닫힌 상태로 가정)
+    int lightSensorPin,
+    int lightThreshold,
+    long fullOpenSteps,
+    int motorRpm
+  )
+    : stepsPerRevolution(2048),
+      stepper(stepsPerRevolution, motorPin1, motorPin2, motorPin3, motorPin4),
+      ldrPin(lightSensorPin),
+      threshold(lightThreshold),
+      curtainMaxSteps(fullOpenSteps),
+      currentStep(0),
       motorDirection(0),
-      lastReadTime(0),
+      lastTelemetryTime(0),
       motorSpeedRpm(motorRpm),
-      deviceId(deviceIdParam) {
+      controlMode(MODE_AUTO),
+      targetStep(0),
+      targetActive(false),
+      commandIndex(0) {
   }
 
   void begin() {
@@ -33,37 +34,19 @@ public:                   // 생성자 시그니처 (외부에서 넘겨받는 �
     stepper.setSpeed(motorSpeedRpm);
   }
 
-  // loop() 안에서 매번 호출되는 메서드 (camelCase)
   void update() {
+    processSerialInput();
+
     unsigned long now = millis();
-
-    // 3초마다 조도값 측정 및 모터 방향 결정 + 로그 출력
-    if (now - lastReadTime >= 3000) {
+    if (now - lastTelemetryTime >= 3000) {
       int lightValue = analogRead(ldrPin);
-      lastReadTime = now;
-
-      if (lightValue > threshold && currentStep < curtainMaxSteps) {
-        motorDirection = 1; // 열림
-      } else if (lightValue < threshold && currentStep > 0) {
-        motorDirection = -1; // 닫힘
-      } else {
-        motorDirection = 0; // 정지
+      lastTelemetryTime = now;
+      emitTelemetry(lightValue);
+      if (controlMode == MODE_AUTO && !targetActive) {
+        applyAutoLogic(lightValue);
       }
-
-      // DB에 넣기 좋은 CSV 한 줄 출력
-      // device_id,light_value,motor_direction,current_step,max_steps
-      Serial.print(deviceId);
-      Serial.print(",");
-      Serial.print(lightValue);
-      Serial.print(",");
-      Serial.print(motorDirection);
-      Serial.print(",");
-      Serial.print(currentStep);
-      Serial.print(",");
-      Serial.println(curtainMaxSteps);
     }
 
-    // 모터를 한 스텝씩 이동
     if (motorDirection == 1 && currentStep < curtainMaxSteps) {
       stepper.setSpeed(motorSpeedRpm);
       stepper.step(1);
@@ -74,35 +57,319 @@ public:                   // 생성자 시그니처 (외부에서 넘겨받는 �
       currentStep--;
     }
 
+    if ((motorDirection == 1 && currentStep >= curtainMaxSteps) ||
+        (motorDirection == -1 && currentStep <= 0)) {
+      if (targetActive) {
+        targetActive = false;
+        sendError("LIMIT");
+      }
+      motorDirection = 0;
+    }
+
+    updateTargetTracking();
     delay(5);
   }
 
 private:
-  const int stepsPerRevolution; // 28BYJ-48 한 바퀴 스텝 수
-  Stepper stepper;              // 스텝모터 인스턴스
+  enum ControlMode { MODE_AUTO, MODE_MANUAL };
 
-  const int ldrPin;             // LDR 센서 핀
-  const int threshold;          // 밝기 임계값
-  const long curtainMaxSteps;   // 커튼 완전 개폐 스텝 수
+  void processSerialInput() {
+    while (Serial.available()) {
+      char incoming = Serial.read();
+      if (incoming == '\r') {
+        continue;
+      }
+      if (incoming == '\n') {
+        if (commandIndex > 0) {
+          commandBuffer[commandIndex] = '\0';
+          handleFrame(String(commandBuffer));
+          commandIndex = 0;
+        }
+        continue;
+      }
 
-  long currentStep;             // 현재 커튼 위치(스텝)
-  int motorDirection;           // 1: 열림, -1: 닫힘, 0: 정지
-  unsigned long lastReadTime;   // 마지막 센서 측정 시각(ms)
-  int motorSpeedRpm;            // 모터 속도(RPM)
-  const char* deviceId;         // ← 추가
+      if (commandIndex < sizeof(commandBuffer) - 1) {
+        commandBuffer[commandIndex++] = incoming;
+      }
+    }
+  }
+
+  void handleFrame(const String& frameRaw) {
+    String frame = frameRaw;
+    frame.trim();
+    int firstComma = frame.indexOf(',');
+    if (firstComma == -1) {
+      sendError("FORMAT");
+      return;
+    }
+
+    String typeToken = frame.substring(0, firstComma);
+    typeToken.trim();
+    typeToken.toUpperCase();
+    if (typeToken != "CMO") {
+      return;  // only handle PC-originated commands
+    }
+
+    int secondComma = frame.indexOf(',', firstComma + 1);
+    if (secondComma == -1) {
+      sendError("FORMAT");
+      return;
+    }
+
+    String metric = frame.substring(firstComma + 1, secondComma);
+    metric.trim();
+    String value = frame.substring(secondComma + 1);
+    value.trim();
+    if (metric.length() == 0 || value.length() == 0) {
+      sendError("FORMAT");
+      return;
+    }
+
+    String metricUpper = metric;
+    metricUpper.toUpperCase();
+    String valueUpper = value;
+    valueUpper.toUpperCase();
+
+    if (metricUpper == "MOTOR") {
+      handleMotorCommand(valueUpper);
+    } else if (metricUpper == "TARGET") {
+      handleTargetCommand(value);
+    } else if (metricUpper == "MODE") {
+      handleModeCommand(valueUpper);
+    } else if (metricUpper == "THRESHOLD") {
+      handleThresholdCommand(value);
+    } else if (metricUpper == "CALIB") {
+      handleCalibrationCommand(valueUpper);
+    } else {
+      sendError("UNKNOWN");
+    }
+  }
+
+  void handleMotorCommand(const String& valueUpper) {
+    controlMode = MODE_MANUAL;
+    targetActive = false;
+
+    if (valueUpper == "OPEN") {
+      if (setMotorDirection(1)) {
+        sendAck("MOTOR", "OPEN");
+      }
+    } else if (valueUpper == "CLOSE") {
+      if (setMotorDirection(-1)) {
+        sendAck("MOTOR", "CLOSE");
+      }
+    } else if (valueUpper == "STOP") {
+      setMotorDirection(0);
+      sendAck("MOTOR", "STOP");
+    } else {
+      sendError("UNKNOWN");
+    }
+  }
+
+  void handleTargetCommand(const String& literalValue) {
+    bool ok = false;
+    long desiredStep = parseStepTarget(literalValue, ok);
+    if (!ok) {
+      sendError("LIMIT");
+      return;
+    }
+
+    controlMode = MODE_MANUAL;
+    targetStep = desiredStep;
+
+    if (abs(currentStep - targetStep) <= targetTolerance) {
+      targetActive = false;
+      setMotorDirection(0);
+      sendAck("TARGET", "REACHED");
+      return;
+    }
+
+    targetActive = true;
+    bool applied = false;
+    if (targetStep > currentStep) {
+      applied = setMotorDirection(1);
+    } else {
+      applied = setMotorDirection(-1);
+    }
+
+    if (!applied) {
+      targetActive = false;
+      sendAck("TARGET", "FAIL");
+    }
+
+    // TARGET 명령은 완료 시점에만 ACK를 보냄 (REACHED/FAIL)
+  }
+
+  void handleModeCommand(const String& valueUpper) {
+    if (valueUpper == "AUTO") {
+      controlMode = MODE_AUTO;
+      targetActive = false;
+      setMotorDirection(0);
+    } else if (valueUpper == "MANUAL") {
+      controlMode = MODE_MANUAL;
+      targetActive = false;
+      setMotorDirection(0);
+    } else {
+      sendError("UNKNOWN");
+    }
+  }
+
+  void handleThresholdCommand(const String& literalValue) {
+    if (literalValue.length() == 0) {
+      sendError("LIMIT");
+      return;
+    }
+
+    int newThreshold = literalValue.toInt();
+    if (newThreshold <= 0) {
+      sendError("LIMIT");
+      return;
+    }
+
+    threshold = newThreshold;
+  }
+
+  void handleCalibrationCommand(const String& valueUpper) {
+    if (valueUpper == "ZERO") {
+      currentStep = 0;
+      targetActive = false;
+      setMotorDirection(0);
+      sendAck("CALIB", "DONE");
+    } else {
+      sendError("UNKNOWN");
+    }
+  }
+
+  void emitTelemetry(int lightValue) {
+    sendFrame("SEN", "LIGHT", String(lightValue));
+    sendFrame("SEN", "CUR_STEP", currentStep);
+    sendFrame("SEN", "MOTOR_DIR", motorDirection);
+  }
+
+  void applyAutoLogic(int lightValue) {
+    if (lightValue > threshold && currentStep < curtainMaxSteps) {
+      motorDirection = 1;
+    } else if (lightValue < threshold && currentStep > 0) {
+      motorDirection = -1;
+    } else {
+      motorDirection = 0;
+    }
+  }
+
+  void updateTargetTracking() {
+    if (!targetActive) {
+      return;
+    }
+
+    if (labs(currentStep - targetStep) <= targetTolerance) {
+      targetActive = false;
+      setMotorDirection(0);
+      sendAck("TARGET", "REACHED");
+      return;
+    }
+
+    if ((motorDirection == 1 && currentStep >= curtainMaxSteps) ||
+        (motorDirection == -1 && currentStep <= 0)) {
+      targetActive = false;
+      sendAck("TARGET", "FAIL");
+      sendError("LIMIT");
+    }
+  }
+
+  long parseStepTarget(const String& literalValue, bool& ok) {
+    ok = false;
+    if (literalValue.length() == 0) {
+      return 0;
+    }
+
+    if (literalValue.indexOf('%') != -1) {
+      String percentText = literalValue;
+      percentText.replace("%", "");
+      float percent = percentText.toFloat();
+      if (percent < 0.0 || percent > 100.0) {
+        return 0;
+      }
+      ok = true;
+      return static_cast<long>((percent / 100.0f) * curtainMaxSteps);
+    }
+
+    long absolute = literalValue.toInt();
+    if (absolute < 0 || absolute > curtainMaxSteps) {
+      return 0;
+    }
+    ok = true;
+    return absolute;
+  }
+
+  bool setMotorDirection(int direction) {
+    if (direction > 0 && currentStep >= curtainMaxSteps) {
+      motorDirection = 0;
+      sendError("LIMIT");
+      return false;
+    }
+    if (direction < 0 && currentStep <= 0) {
+      motorDirection = 0;
+      sendError("LIMIT");
+      return false;
+    }
+
+    motorDirection = direction;
+    return true;
+  }
+
+  void sendFrame(const char* dataType, const char* metric, const String& value) {
+    Serial.print(dataType);
+    Serial.print(",");
+    Serial.print(metric);
+    Serial.print(",");
+    Serial.println(value);
+  }
+
+  void sendFrame(const char* dataType, const char* metric, long value) {
+    Serial.print(dataType);
+    Serial.print(",");
+    Serial.print(metric);
+    Serial.print(",");
+    Serial.println(value);
+  }
+
+  void sendAck(const char* metric, const String& value) {
+    sendFrame("ACK", metric, value);
+  }
+
+  void sendError(const char* code) {
+    sendFrame("ACK", "ERROR", String(code));
+  }
+
+  const int stepsPerRevolution;
+  Stepper stepper;
+
+  const int ldrPin;
+  int threshold;
+  const long curtainMaxSteps;
+
+  long currentStep;
+  int motorDirection;
+  unsigned long lastTelemetryTime;
+  int motorSpeedRpm;
+
+  ControlMode controlMode;
+  long targetStep;
+  bool targetActive;
+  static constexpr int targetTolerance = 10;
+
+  char commandBuffer[64];
+  size_t commandIndex;
 };
 
-// 전역에서 컨트롤러 인스턴스 생성 (PascalCase 타입, camelCase 변수명)
 CurtainController curtainController(
-  8,   // motorPin1
-  10,  // motorPin2
-  9,   // motorPin3
-  11,  // motorPin4
-  A0,  // lightSensorPin (LDR)
-  500, // lightThreshold
-  3L * 2048, // fullOpenSteps (3바퀴)
-  20,  // motorRpm
-  "curtain-01" // deviceId
+  8,
+  10,
+  9,
+  11,
+  A0,
+  500,
+  1.3L * 2048,
+  20
 );
 
 void setup() {
