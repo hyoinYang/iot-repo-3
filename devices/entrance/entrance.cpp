@@ -28,7 +28,6 @@ void Entrance::setup()
 
 void Entrance::loop() 
 {
-	// 시리얼 데이터 수신 및 파싱 (항상 확인)
 	while (Serial.available() > 0) 
 	{
 		char incomingChar = Serial.read();
@@ -56,7 +55,6 @@ void Entrance::loop()
 	// ✅ 상태 1: 카드 대기 중
 	if (m_open_time == 0)
 	{
-		// waitForCard()를 비차단(non-blocking) 방식으로 변경
 		if (rc522.PICC_IsNewCardPresent() && rc522.PICC_ReadCardSerial()) 
 		{
 			Serial.println("[DEBUG] Card detected!");
@@ -89,20 +87,32 @@ void Entrance::loop()
 			{
 				m_is_valid = true;
 				Serial.println("[DEBUG] Card is valid!");
-				createLog(EVENT_TYPE::VALID);
+
+				char uidBuffer[20] = {0};
+				int offset = 0;
+				for (byte i = 0; i < m_card_uid_size; i++) 
+				{
+					offset += sprintf(uidBuffer + offset, "%02X", m_card_uid[i]);
+				}
+				createLog("SEN", String(uidBuffer), 1);
 			} 
 			else 
 			{
 				m_is_valid = false;
 				Serial.println("[DEBUG] Card is NOT valid");
-				createLog(EVENT_TYPE::FAILED);
+				char uidBuffer[20] = {0};
+				int offset = 0;
+				for (byte i = 0; i < m_card_uid_size; i++) 
+				{
+					offset += sprintf(uidBuffer + offset, "%02X", m_card_uid[i]);
+				}
+				createLog("SEN", String(uidBuffer), 0);
 			}
 
 			rc522.PICC_HaltA();
 			rc522.PCD_StopCrypto1();
 		}
 		
-		// m_is_valid 여부와 관계없이 문 열기 로직 실행
 		if (m_is_valid) 
 		{ 
 			stepper.step(MOTOR_STEPS);
@@ -110,8 +120,9 @@ void Entrance::loop()
 
 			Serial.print("[DEBUG] Door opened at: ");
 			Serial.println(m_open_time);
-			createLog(EVENT_TYPE::OPENED);
-			m_is_valid = false;  // 초기화
+			createLog("SEN", "MOTOR", 1);
+			createLog("CMD", "ELE", 1);
+			m_is_valid = false;\
 		}
 	}
 	// ✅ 상태 2: 문이 열려있는 중 (거리 감지)
@@ -124,6 +135,7 @@ void Entrance::loop()
 			m_is_detected = true;
 			m_open_time = millis();
 			Serial.println("[DEBUG] Object detected, door stays open");
+			createLog("SEN", "DISTANCE", (float)dist);
 		} 
 		else 
 		{
@@ -175,7 +187,7 @@ void Entrance::closeDoor()
 	digitalWrite(STEP_INT3, LOW);
 	digitalWrite(STEP_INT1, LOW);
 
-	Serial.println("[DEBUG] Door closed");
+	createLog("SEN", "MOTOR", -1);
 }
 
 MFRC522::StatusCode Entrance::checkAuth(int index, MFRC522::MIFARE_Key key) 
@@ -217,11 +229,6 @@ long Entrance::detectDistance()
 	duration = pulseIn(ECHO, HIGH, timeout);
 	
 	distance = duration * 0.034 / 2;
-
-	if (distance == 0) 
-	{	
-		Serial.println("[DEBUG] distance is 0");
-	}
 
 	return distance;
 }
@@ -301,20 +308,17 @@ const char* Entrance::eventTypeToString(EVENT_TYPE type)
 	}
 }
 
-void Entrance::createLog(EVENT_TYPE type)
+void Entrance::createLog(String dataType, String metricName, float value)
 {	
-	Serial.print(eventTypeToString(type));
-	Serial.print(",");
 	Serial.print(m_entrance_device_id);
-	Serial.print(",");
+	Serial.print(DELIMITER);
+
+	Serial.print(dataType);
+	Serial.print(DELIMITER);
 	
-	// UID 출력 (HEX 형식)
-	for (byte i = 0; i < m_card_uid_size; i++) 
-	{
-		if (m_card_uid[i] < 0x10) Serial.print("0");
-		Serial.print(m_card_uid[i], HEX);
-	}
-	Serial.println();
+	Serial.print(metricName);
+	Serial.print(DELIMITER);
+	Serial.println(value);
 }
 
 void Entrance::set_device_id()
