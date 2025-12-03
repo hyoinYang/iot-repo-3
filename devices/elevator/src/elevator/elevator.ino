@@ -20,7 +20,8 @@ unsigned long wait_time = 0;
 // variables
 const int button_pin_arr[] = {BUTTONFIRST_PIN, BUTTONSECOND_PIN, BUTTONTHIRD_PIN};
 const int LED_pin_arr[] = {LEDFIRST_PIN, LEDSECOND_PIN, LEDTHIRD_PIN};
-const byte ele_LED_pin_arr[] = {
+const byte ele_LED_pin_arr[] = 
+{
   B00000001, 
   B00000010, 
   B00000100, 
@@ -199,7 +200,9 @@ void arriveAtDstUpdateMode()
       LED_stat[ele_cur_floor] = false;
       Serial.print("This is floor "); Serial.println(ele_cur_floor+1);
       Serial.println("Door is Opend");
-      wait_time = 5000; 
+      wait_time = millis() + 5000; 
+      Serial.print("ACK,floor,0");
+      Serial.println(ele_cur_floor+1);
     }
     
     seven_seg_data_to_display = seven_seg_digits[ele_cur_floor];
@@ -284,6 +287,50 @@ void updateElePos()
   updateDisplays(ele_LED_pin_arr[ele_pos], seven_seg_data_to_display);
 }
 
+void handleSerialCommand() 
+{
+  if (Serial.available() > 0) {
+    String command = Serial.readStringUntil('\n');
+    command.trim();
+
+    // Split the command string by commas
+    int firstComma = command.indexOf(',');
+    if (firstComma == -1) return; 
+
+    int secondComma = command.indexOf(',', firstComma + 1);
+    if (secondComma == -1) return;
+
+    String cmdType = command.substring(0, firstComma);
+    String cmdTarget = command.substring(firstComma + 1, secondComma);
+    String cmdValue = command.substring(secondComma + 1);
+
+    if (cmdType == "CMO" && cmdTarget == "floor") 
+    {
+      int floorNum = cmdValue.toInt();
+      if (floorNum >= 1 && floorNum <= 3) 
+      {
+        int targetFloor = floorNum - 1;
+        int currentFloor = fromEleposeToFloor(ele_pos);
+
+        // if the door is open and the call is for the current floor, reset the timer
+        if (wait_time != 0 && ele_pos % 3 == 0 && currentFloor == targetFloor) 
+        {
+          wait_time = millis() + 5000;
+          Serial.println("Door wait time has been reset.");
+        } 
+        // otherwise, if the request light is off, turn it on and assign destination
+        else if (LED_stat[targetFloor] == false) 
+        {
+          digitalWrite(LED_pin_arr[targetFloor], HIGH);
+          LED_stat[targetFloor] = true;
+          Serial.print("Remote call at Floor "); Serial.println(targetFloor + 1);
+          assignEleDst();
+        }
+      }
+    }
+  }
+}
+
 
 void setup() {
   Serial.begin(9600);
@@ -302,6 +349,7 @@ void setup() {
 }
 
 void loop() {
+  handleSerialCommand();
 
   byte button;
 
@@ -322,18 +370,15 @@ void loop() {
   
   arriveAtDstUpdateMode();
 
-  if (wait_time != 0) 
-  {
-    // Serial.print(wait_time);
-    wait_time--;
-    if (wait_time == 0)
-    {
+  current_time = millis();
+  if (wait_time != 0) {
+    if (current_time >= wait_time) {
       Serial.println("Door is closed");
+      wait_time = 0;
     }
   }
-  else
-  {
-    current_time = millis();
+
+  if (wait_time == 0) {
     if (current_time - previous_time > 1000) // 1초마다 엘리베이터 이동
     {
       if (ele_mode != WAIT)
@@ -344,6 +389,4 @@ void loop() {
       previous_time = current_time;
     }
   }
-
-
 }
