@@ -9,15 +9,15 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from collections import deque
 
-from_class = uic.loadUiType("./dashboard.ui")[0]
+from_class = uic.loadUiType("service/pyqt/dashboard.ui")[0]
 
 # Define serial port configurations
 # Adjust the COM port based on your environment
 SERIAL_PORTS = {
-    'ele_00': 'COM3',
+    'ele_00': '/com',
     'ent_00': 'COM4',
-    'cur_00': 'COM5',
-    'dht_00': '/dev/ttyACM0',
+    'cur_00': '/dev/ttyACM0',
+    'dht_00': 'COM6',
 }
 
 # 그래프를 그리는 캔버스 클래스
