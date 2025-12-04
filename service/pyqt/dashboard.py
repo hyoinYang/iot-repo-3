@@ -111,7 +111,7 @@ class Ui_Dialog(object):
 
     def __init__(self):
         self.api_url = "http://localhost:5000"
-        self.polling_interval = 0.1
+        self.polling_interval = 0.05
         self.polling_thread = None
         self.running = True
         
@@ -697,6 +697,15 @@ class Ui_Dialog(object):
                 self._update_curtain_progress(value)
             elif metric_name == "MOTOR_DIR":
                 self._handle_curtain_direction(value)
+        if data_type == "ACK":
+            print("[DEBUG] ACK: " + metric_name + " value: " + value)
+            if metric_name == "FLOOR" or metric_name == "CANCEL":
+                if value == "1":
+                    self.label_ele_1f.setText(" ")
+                elif value == "2":
+                    self.label_ele_2f.setText(" ")
+                elif value == "3":
+                    self.label_ele_3f.setText(" ")
 
     def start_polling(self):
         """상태 폴링 시작"""
