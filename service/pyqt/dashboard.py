@@ -5,6 +5,9 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
 from PyQt6 import uic
 from PyQt6.QtCore import *
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+from collections import deque
 
 from_class = uic.loadUiType("./dashboard.ui")[0]
 
@@ -14,7 +17,71 @@ SERIAL_PORTS = {
     'elevator': 'COM3',
     'entrance': 'COM4',
     'curtain': 'COM5',
+    'dht_00': '/dev/ttyACM0',
 }
+
+# 그래프를 그리는 캔버스 클래스
+class GraphCanvas(FigureCanvas):
+    def __init__(self, parent=None):
+        self.fig = Figure(figsize=(8, 6))
+        super().__init__(self.fig)
+        self.setParent(parent)
+        
+        self.ax1 = self.fig.add_subplot(111)
+        self.ax2 = self.ax1.twinx()
+        
+        self.max_points = 50
+        self.temp_data = deque(maxlen=self.max_points)
+        self.hum_data = deque(maxlen=self.max_points)
+        self.index_data = deque(maxlen=self.max_points)
+        self.current_index = 0
+        
+        self.setup_plot()
+        
+    def setup_plot(self):
+        self.ax1.clear()
+        self.ax2.clear()
+        
+        self.ax1.tick_params(axis='y', labelcolor='red')
+        self.ax1.set_ylim(0, 35)
+        self.ax1.grid(True, alpha=0.3)
+        
+        self.ax2.tick_params(axis='y', labelcolor='blue')
+        self.ax2.set_ylim(0, 100)
+        
+        self.ax1.set_xticks([])
+        
+        self.fig.tight_layout()
+        
+    def update_graph(self, temperature, humidity):
+        self.index_data.append(self.current_index)
+        self.temp_data.append(temperature)
+        self.hum_data.append(humidity)
+        self.current_index += 1
+        
+        self.ax1.clear()
+        self.ax2.clear()
+        
+        line1 = self.ax1.plot(list(self.index_data), list(self.temp_data), 
+                             'r-o', linewidth=2, markersize=4, label='Temperature')
+        self.ax1.tick_params(axis='y', labelcolor='red')
+        self.ax1.set_ylim(0, 35)
+        self.ax1.grid(True, alpha=0.3)
+        
+        line2 = self.ax2.plot(list(self.index_data), list(self.hum_data), 
+                             'b-o', linewidth=2, markersize=4, label='Humidity')
+        self.ax2.tick_params(axis='y', labelcolor='blue')
+        self.ax2.set_ylim(0, 100)
+        
+        self.ax1.set_xticks([])
+                
+        lines = line1 + line2
+        labels = [l.get_label() for l in lines]
+        self.ax1.legend(lines, labels, loc='upper left', fontsize=9)
+        
+        self.fig.tight_layout()
+        self.draw()
+
 
 class SerialThread(QThread):
     received_data = pyqtSignal(str, str)  # port_name, data
@@ -32,7 +99,7 @@ class SerialThread(QThread):
             self.running = True
             while self.running:
                 if self.ser.in_waiting > 0:
-                    data = self.ser.readline().decode('utf-8').strip()
+                    data = self.ser.readline().decode('utf-8', errors='ignore').strip()
                     if data:
                         self.received_data.emit(self.serial_port, data)
                 time.sleep(0.01)
@@ -58,17 +125,30 @@ class WindowClass(QMainWindow, from_class) :
         self.serial_threads = {}
         self.init_serial_ports()
 
+        # 그래프 캔버스 생성 및 추가
+        self.graph_canvas = GraphCanvas()
+        layout = QVBoxLayout(self.widget_graph)
+        layout.addWidget(self.graph_canvas)
+        self.widget_graph.setLayout(layout)
+
         # Connect buttons to slots
         self.pushButton_1f.clicked.connect(self.elevator_1f_call)
         self.pushButton_2f.clicked.connect(self.elevator_2f_call)
         self.pushButton_3f.clicked.connect(self.elevator_3f_call)
-        
         self.pushButton_e.clicked.connect(self.entrance_open)
+
+        self.pushButton_air.clicked.connect(self.control_air)
+        self.pushButton_heat.clicked.connect(self.control_heat)
+        self.pushButton_humi.clicked.connect(self.control_hum)
 
         # Initially hide all check icons
         self.label_ele_1f.setText("")
         self.label_ele_2f.setText("")
         self.label_ele_3f.setText("")
+
+        self.air_state = 0
+        self.heat_state = 0
+        self.hum_state = 0
 
     def init_serial_ports(self):
         for name, port in SERIAL_PORTS.items():
@@ -95,6 +175,62 @@ class WindowClass(QMainWindow, from_class) :
         if 'elevator' in self.serial_threads:
             self.serial_threads['elevator'].write(command)
             self.label_ele_3f.setText("✅")
+
+    def entrance_open(self):
+        # This function is connected in the UI but has no logic yet.
+        pass
+
+    def control_air(self):
+        if 'dht_00' not in self.serial_threads:
+            return
+        if self.air_state == 0:
+            command = "A"
+            self.label_airState.setText("ON")
+            self.air_state = 1
+        elif self.air_state == 1:
+            command = "B"
+            self.label_airState.setText("AUTO")
+            self.air_state = 2
+        else:
+            command = "G"
+            self.label_airState.setText("OFF")
+            self.air_state = 0
+        self.serial_threads['dht_00'].write(command)
+
+    def control_heat(self):
+        if 'dht_00' not in self.serial_threads:
+            return
+        if self.heat_state == 0:
+            command = "C"
+            self.label_heatState.setText("ON")
+            self.heat_state = 1
+        elif self.heat_state == 1:
+            command = "D"
+            self.label_heatState.setText("AUTO")
+            self.heat_state = 2
+        else:
+            command = "H"
+            self.label_heatState.setText("OFF")
+            self.heat_state = 0
+        self.serial_threads['dht_00'].write(command)
+
+    def control_hum(self):
+        if 'dht_00' not in self.serial_threads:
+            return
+        if self.hum_state == 0:
+            command = "E"
+            self.label_humiState.setText("ON")
+            self.hum_state = 1
+        elif self.hum_state == 1:
+            command = "F"
+            self.label_humiState.setText("AUTO")
+            self.hum_state = 2
+        else:
+            command = "I"
+            self.label_humiState.setText("OFF")
+            self.hum_state = 0
+        self.serial_threads['dht_00'].write(command)
+
 
     def handle_serial_data(self, port, data):
         # Find which device this data is from
@@ -131,6 +267,20 @@ class WindowClass(QMainWindow, from_class) :
             # Add logic for curtain device here
             print(f"Curtain data: {data}")
             pass
+        
+        elif device_name == 'dht_00':
+            try:
+                if "SEN,TEM" in data and "HUM" in data:
+                    parts = data.split(',')
+                    temperature = float(parts[2])
+                    humidity = int(parts[4])
+                    
+                    self.lcdNumber_temp.display(temperature)
+                    self.lcdNumber_hu.display(humidity)
+                    
+                    self.graph_canvas.update_graph(temperature, humidity)
+            except Exception as e:
+                print(f"Error in dht_00 data handling: {e}")
 
 
 if __name__ == "__main__":
