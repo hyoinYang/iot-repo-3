@@ -121,158 +121,136 @@ class Ui_Dialog(object):
         self.hum_state = 0
 
     def setupUi(self, dialog):
-        """UI 설정"""
-        dialog.setObjectName("Dialog")
-        dialog.resize(1039, 582)
-        
-        # 공동현관 그룹
+        dialog.setObjectName("dialog")
+        dialog.resize(1039, 639)
         self.groupBox_e = QtWidgets.QGroupBox(parent=dialog)
-        self.groupBox_e.setGeometry(QtCore.QRect(70, 20, 341, 141))
+        self.groupBox_e.setGeometry(QtCore.QRect(40, 20, 341, 161))
         self.groupBox_e.setObjectName("groupBox_e")
-        
         self.le_e_id = QtWidgets.QLineEdit(parent=self.groupBox_e)
         self.le_e_id.setGeometry(QtCore.QRect(20, 50, 221, 41))
         self.le_e_id.setReadOnly(True)
         self.le_e_id.setObjectName("le_e_id")
-        
         self.label_e_id = QtWidgets.QLabel(parent=self.groupBox_e)
         self.label_e_id.setGeometry(QtCore.QRect(20, 30, 66, 18))
         self.label_e_id.setObjectName("label_e_id")
-        
         self.label_e_approv = QtWidgets.QLabel(parent=self.groupBox_e)
-        self.label_e_approv.setGeometry(QtCore.QRect(250, 50, 61, 41))
+        self.label_e_approv.setGeometry(QtCore.QRect(260, 50, 61, 41))
         self.label_e_approv.setObjectName("label_e_approv")
-        
         self.pushButton_e = QtWidgets.QPushButton(parent=self.groupBox_e)
-        self.pushButton_e.setGeometry(QtCore.QRect(180, 100, 151, 30))
+        self.pushButton_e.setGeometry(QtCore.QRect(20, 110, 151, 30))
         self.pushButton_e.setObjectName("pushButton_e")
-        
-        # 엘리베이터 그룹
+        self.label_e_open = QtWidgets.QLabel(parent=self.groupBox_e)
+        self.label_e_open.setGeometry(QtCore.QRect(180, 120, 131, 18))
+        self.label_e_open.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignTrailing|QtCore.Qt.AlignmentFlag.AlignVCenter)
+        self.label_e_open.setObjectName("label_e_open")
         self.groupBox_ele = QtWidgets.QGroupBox(parent=dialog)
-        self.groupBox_ele.setGeometry(QtCore.QRect(70, 190, 341, 291))
+        self.groupBox_ele.setGeometry(QtCore.QRect(40, 190, 341, 291))
         self.groupBox_ele.setObjectName("groupBox_ele")
-        
         self.lcdNumber_floor = QtWidgets.QLCDNumber(parent=self.groupBox_ele)
-        self.lcdNumber_floor.setGeometry(QtCore.QRect(-110, 100, 181, 91))
+        self.lcdNumber_floor.setGeometry(QtCore.QRect(-60, 100, 181, 91))
         self.lcdNumber_floor.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
         self.lcdNumber_floor.setLineWidth(-1)
         self.lcdNumber_floor.setObjectName("lcdNumber_floor")
-        
         self.label = QtWidgets.QLabel(parent=self.groupBox_ele)
-        self.label.setGeometry(QtCore.QRect(10, 90, 66, 18))
+        self.label.setGeometry(QtCore.QRect(60, 80, 66, 18))
+        self.label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.label.setObjectName("label")
-        
         self.pushButton_1f = QtWidgets.QPushButton(parent=self.groupBox_ele)
-        self.pushButton_1f.setGeometry(QtCore.QRect(190, 190, 88, 26))
+        self.pushButton_1f.setGeometry(QtCore.QRect(210, 200, 88, 26))
         self.pushButton_1f.setObjectName("pushButton_1f")
-        
         self.pushButton_2f = QtWidgets.QPushButton(parent=self.groupBox_ele)
-        self.pushButton_2f.setGeometry(QtCore.QRect(190, 130, 88, 26))
+        self.pushButton_2f.setGeometry(QtCore.QRect(210, 140, 88, 26))
         self.pushButton_2f.setObjectName("pushButton_2f")
-        
         self.pushButton_3f = QtWidgets.QPushButton(parent=self.groupBox_ele)
-        self.pushButton_3f.setGeometry(QtCore.QRect(190, 70, 88, 26))
+        self.pushButton_3f.setGeometry(QtCore.QRect(210, 80, 88, 26))
         self.pushButton_3f.setObjectName("pushButton_3f")
-        
         self.label_ele_3f = QtWidgets.QLabel(parent=self.groupBox_ele)
-        self.label_ele_3f.setGeometry(QtCore.QRect(170, 70, 16, 18))
+        self.label_ele_3f.setGeometry(QtCore.QRect(190, 80, 16, 18))
         self.label_ele_3f.setObjectName("label_ele_3f")
-        
         self.label_ele_2f = QtWidgets.QLabel(parent=self.groupBox_ele)
-        self.label_ele_2f.setGeometry(QtCore.QRect(170, 130, 16, 18))
+        self.label_ele_2f.setGeometry(QtCore.QRect(190, 140, 16, 18))
         self.label_ele_2f.setObjectName("label_ele_2f")
-        
         self.label_ele_1f = QtWidgets.QLabel(parent=self.groupBox_ele)
-        self.label_ele_1f.setGeometry(QtCore.QRect(170, 190, 16, 18))
+        self.label_ele_1f.setGeometry(QtCore.QRect(190, 200, 16, 18))
         self.label_ele_1f.setObjectName("label_ele_1f")
-        
-        # Home 그룹
+        self.line = QtWidgets.QFrame(parent=self.groupBox_ele)
+        self.line.setGeometry(QtCore.QRect(150, 40, 20, 211))
+        self.line.setFrameShape(QtWidgets.QFrame.Shape.VLine)
+        self.line.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
+        self.line.setObjectName("line")
+        self.label_6 = QtWidgets.QLabel(parent=self.groupBox_ele)
+        self.label_6.setGeometry(QtCore.QRect(220, 40, 66, 18))
+        self.label_6.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.label_6.setObjectName("label_6")
         self.groupBox_home = QtWidgets.QGroupBox(parent=dialog)
-        self.groupBox_home.setGeometry(QtCore.QRect(440, 20, 571, 491))
+        self.groupBox_home.setGeometry(QtCore.QRect(440, 20, 581, 601))
         self.groupBox_home.setObjectName("groupBox_home")
-        
         self.widget_graph = QtWidgets.QWidget(parent=self.groupBox_home)
-        self.widget_graph.setGeometry(QtCore.QRect(129, 50, 371, 141))
+        self.widget_graph.setGeometry(QtCore.QRect(30, 150, 521, 201))
         self.widget_graph.setObjectName("widget_graph")
-        
         self.lcdNumber_temp = QtWidgets.QLCDNumber(parent=self.groupBox_home)
         self.lcdNumber_temp.setGeometry(QtCore.QRect(10, 50, 101, 51))
         self.lcdNumber_temp.setObjectName("lcdNumber_temp")
-        
         self.lcdNumber_hu = QtWidgets.QLCDNumber(parent=self.groupBox_home)
-        self.lcdNumber_hu.setGeometry(QtCore.QRect(10, 130, 101, 51))
+        self.lcdNumber_hu.setGeometry(QtCore.QRect(150, 50, 101, 51))
         self.lcdNumber_hu.setObjectName("lcdNumber_hu")
-        
         self.label_2 = QtWidgets.QLabel(parent=self.groupBox_home)
         self.label_2.setGeometry(QtCore.QRect(10, 30, 66, 18))
         self.label_2.setObjectName("label_2")
-        
         self.label_3 = QtWidgets.QLabel(parent=self.groupBox_home)
-        self.label_3.setGeometry(QtCore.QRect(10, 110, 66, 18))
+        self.label_3.setGeometry(QtCore.QRect(150, 30, 66, 18))
         self.label_3.setObjectName("label_3")
-        
         self.lcdNumber_lux = QtWidgets.QLCDNumber(parent=self.groupBox_home)
-        self.lcdNumber_lux.setGeometry(QtCore.QRect(20, 330, 101, 51))
+        self.lcdNumber_lux.setGeometry(QtCore.QRect(20, 440, 101, 51))
         self.lcdNumber_lux.setObjectName("lcdNumber_lux")
-        
         self.label_4 = QtWidgets.QLabel(parent=self.groupBox_home)
-        self.label_4.setGeometry(QtCore.QRect(20, 300, 101, 18))
+        self.label_4.setGeometry(QtCore.QRect(20, 410, 101, 18))
         self.label_4.setObjectName("label_4")
-        
-        self.label_airState = QtWidgets.QLabel(parent=self.groupBox_home)
-        self.label_airState.setGeometry(QtCore.QRect(20, 200, 151, 18))
-        self.label_airState.setObjectName("label_airState")
-        
-        self.label_heatState = QtWidgets.QLabel(parent=self.groupBox_home)
-        self.label_heatState.setGeometry(QtCore.QRect(200, 200, 151, 18))
-        self.label_heatState.setObjectName("label_heatState")
-        
-        self.label_humiState = QtWidgets.QLabel(parent=self.groupBox_home)
-        self.label_humiState.setGeometry(QtCore.QRect(380, 200, 151, 18))
-        self.label_humiState.setObjectName("label_humiState")
-        
-        self.pushButton_heat = QtWidgets.QPushButton(parent=self.groupBox_home)
-        self.pushButton_heat.setGeometry(QtCore.QRect(200, 220, 151, 30))
-        self.pushButton_heat.setObjectName("pushButton_heat")
-        
-        self.pushButton_air = QtWidgets.QPushButton(parent=self.groupBox_home)
-        self.pushButton_air.setGeometry(QtCore.QRect(20, 220, 151, 30))
-        self.pushButton_air.setObjectName("pushButton_air")
-        
-        self.pushButton_humi = QtWidgets.QPushButton(parent=self.groupBox_home)
-        self.pushButton_humi.setGeometry(QtCore.QRect(380, 220, 151, 30))
-        self.pushButton_humi.setObjectName("pushButton_humi")
-        
-        # 커튼 제어 버튼
         self.pushButton_curOpen = QtWidgets.QPushButton(parent=self.groupBox_home)
-        self.pushButton_curOpen.setGeometry(QtCore.QRect(20, 430, 121, 26))
+        self.pushButton_curOpen.setGeometry(QtCore.QRect(20, 530, 121, 26))
         self.pushButton_curOpen.setObjectName("pushButton_curOpen")
-        
         self.pushButton_curClose = QtWidgets.QPushButton(parent=self.groupBox_home)
-        self.pushButton_curClose.setGeometry(QtCore.QRect(160, 430, 121, 26))
+        self.pushButton_curClose.setGeometry(QtCore.QRect(160, 530, 121, 26))
         self.pushButton_curClose.setObjectName("pushButton_curClose")
-        
         self.pushButton_curStop = QtWidgets.QPushButton(parent=self.groupBox_home)
-        self.pushButton_curStop.setGeometry(QtCore.QRect(290, 430, 121, 26))
+        self.pushButton_curStop.setGeometry(QtCore.QRect(290, 530, 121, 26))
         self.pushButton_curStop.setObjectName("pushButton_curStop")
-        
-        self.pushButton_curAuto = QtWidgets.QPushButton(parent=self.groupBox_home)
-        self.pushButton_curAuto.setGeometry(QtCore.QRect(430, 430, 121, 26))
-        self.pushButton_curAuto.setObjectName("pushButton_curAuto")
-        
-        # 커튼 진행률 바
         self.progressBar_cur = QtWidgets.QProgressBar(parent=self.groupBox_home)
-        self.progressBar_cur.setGeometry(QtCore.QRect(150, 330, 241, 41))
+        self.progressBar_cur.setGeometry(QtCore.QRect(160, 450, 241, 41))
         self.progressBar_cur.setProperty("value", 24)
         self.progressBar_cur.setObjectName("progressBar_cur")
-        
         self.label_5 = QtWidgets.QLabel(parent=self.groupBox_home)
-        self.label_5.setGeometry(QtCore.QRect(150, 300, 101, 18))
+        self.label_5.setGeometry(QtCore.QRect(160, 410, 101, 18))
         self.label_5.setObjectName("label_5")
-        
+        self.label_airState = QtWidgets.QLabel(parent=self.groupBox_home)
+        self.label_airState.setGeometry(QtCore.QRect(420, 40, 151, 18))
+        self.label_airState.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.label_airState.setObjectName("label_airState")
+        self.label_heatState = QtWidgets.QLabel(parent=self.groupBox_home)
+        self.label_heatState.setGeometry(QtCore.QRect(420, 80, 151, 18))
+        self.label_heatState.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.label_heatState.setObjectName("label_heatState")
+        self.label_humiState = QtWidgets.QLabel(parent=self.groupBox_home)
+        self.label_humiState.setGeometry(QtCore.QRect(420, 120, 151, 18))
+        self.label_humiState.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.label_humiState.setObjectName("label_humiState")
+        self.pushButton_curAuto = QtWidgets.QPushButton(parent=self.groupBox_home)
+        self.pushButton_curAuto.setGeometry(QtCore.QRect(430, 530, 121, 26))
+        self.pushButton_curAuto.setObjectName("pushButton_curAuto")
         self.label_curState = QtWidgets.QLabel(parent=self.groupBox_home)
-        self.label_curState.setGeometry(QtCore.QRect(430, 400, 66, 18))
+        self.label_curState.setGeometry(QtCore.QRect(160, 410, 300, 20))
+        self.label_curState.setText("")
+        self.label_curState.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeading|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignVCenter)
         self.label_curState.setObjectName("label_curState")
+        self.pushButton_heat = QtWidgets.QPushButton(parent=self.groupBox_home)
+        self.pushButton_heat.setGeometry(QtCore.QRect(290, 70, 151, 30))
+        self.pushButton_heat.setObjectName("pushButton_heat")
+        self.pushButton_air = QtWidgets.QPushButton(parent=self.groupBox_home)
+        self.pushButton_air.setGeometry(QtCore.QRect(290, 30, 151, 30))
+        self.pushButton_air.setObjectName("pushButton_air")
+        self.pushButton_humi = QtWidgets.QPushButton(parent=self.groupBox_home)
+        self.pushButton_humi.setGeometry(QtCore.QRect(290, 110, 151, 30))
+        self.pushButton_humi.setObjectName("pushButton_humi")
 
         self.retranslateUi(dialog)
         QtCore.QMetaObject.connectSlotsByName(dialog)
@@ -323,6 +301,7 @@ class Ui_Dialog(object):
         self.label_e_id.setText(_translate("Dialog", "ID"))
         self.label_e_approv.setText(_translate("Dialog", ""))
         self.pushButton_e.setText(_translate("Dialog", "공동현관 열기"))
+        self.label_e_open.setText(_translate("Dialog", " "))
         self.groupBox_ele.setTitle(_translate("Dialog", "엘리베이터"))
         self.label.setText(_translate("Dialog", "층"))
         self.pushButton_1f.setText(_translate("Dialog", "1층"))
@@ -332,9 +311,9 @@ class Ui_Dialog(object):
         self.label_2.setText(_translate("Dialog", "온도(C)"))
         self.label_3.setText(_translate("Dialog", "습도(%)"))
         self.label_4.setText(_translate("Dialog", "외부조도(LUX)"))
-        self.label_airState.setText(_translate("Dialog", "state"))
-        self.label_heatState.setText(_translate("Dialog", "state"))
-        self.label_humiState.setText(_translate("Dialog", "state"))
+        self.label_airState.setText(_translate("Dialog", "Auto"))
+        self.label_heatState.setText(_translate("Dialog", "Auto"))
+        self.label_humiState.setText(_translate("Dialog", "Auto"))
         self.pushButton_heat.setText(_translate("Dialog", "히터 ON/OFF/Auto"))
         self.pushButton_air.setText(_translate("Dialog", "에어컨 ON/OFF/Auto"))
         self.pushButton_humi.setText(_translate("Dialog", "가습기 ON/OFF/Auto"))
@@ -343,7 +322,7 @@ class Ui_Dialog(object):
         self.pushButton_curStop.setText(_translate("Dialog", "커튼 STOP"))
         self.pushButton_curAuto.setText(_translate("Dialog", "커튼 Auto 복귀"))
         self.label_5.setText(_translate("Dialog", "커튼 열림 정도"))
-        self.label_curState.setText(_translate("Dialog", "state"))
+        self.label_curState.setText(_translate("Dialog", " "))
 
     def entrance_open(self):
         """출입문 열기"""
@@ -435,12 +414,16 @@ class Ui_Dialog(object):
             if self.air_state == 0:
                 value = '1'
                 self.air_state = 1
+                self.label_airState.setText("ON")
+
             elif self.air_state == 1:
                 value = '0'
                 self.air_state = 2
+                self.label_airState.setText("OFF")
             else:
                 value = '-1'
                 self.air_state = 0
+                self.label_airState.setText("Auto")
             
             response = requests.post(
                 f"{self.api_url}/api/command",
@@ -464,12 +447,15 @@ class Ui_Dialog(object):
             if self.heat_state == 0:
                 value = '1'
                 self.heat_state = 1
+                self.label_heatState.setText("ON")
             elif self.heat_state == 1:
                 value = '0'
                 self.heat_state = 2
+                self.label_heatState.setText("OFF")
             else:
                 value = '-1'
                 self.heat_state = 0
+                self.label_heatState.setText("Auto")
             
             response = requests.post(
                 f"{self.api_url}/api/command",
@@ -493,12 +479,15 @@ class Ui_Dialog(object):
             if self.hum_state == 0:
                 value = '1'
                 self.hum_state = 1
+                self.label_humiState.setText("ON")
             elif self.hum_state == 1:
                 value = '0'
                 self.hum_state = 2
+                self.label_humiState.setText("OFF")
             else:
                 value = '-1'
                 self.hum_state = 0
+                self.label_humiState.setText("Auto")
             
             response = requests.post(
                 f"{self.api_url}/api/command",
@@ -659,53 +648,66 @@ class Ui_Dialog(object):
         """상태에 따라 UI 업데이트"""
         if not state:
             return
-
+        device_id = state.get('device_id')
         data_type = state.get('data_type', '')
         metric_name = state.get('metric_name', '')
         value = state.get('value', '')
-
+        
         # 그래프와 LCD 업데이트용 데이터 생성
         if data_type == "SEN":
-            #print("[DEBUG] metric_name: " + metric_name + "value: " + value)
-            if metric_name == 'HUM':
-                serial_data = f"SEN,{metric_name},{value}"
-                self.display_manager.update_display(serial_data)
-            elif metric_name == 'TEM':
-                serial_data = f"SEN,{metric_name},{value}"
-                self.display_manager.update_display(serial_data)
+            if device_id[:3] == "dht":
+                if metric_name == 'HUM':
+                    serial_data = f"SEN,{metric_name},{value}"
+                    self.display_manager.update_display(serial_data)
+                
+                elif metric_name == 'TEM':
+                    serial_data = f"SEN,{metric_name},{value}"
+                    self.display_manager.update_display(serial_data)
 
-            if metric_name == 'RFID_ACCESS':
-                self.le_e_id.setText(str(value))
-                self.label_e_approv.setText("✅")
-            elif metric_name == 'RFID_DENY':
-                self.le_e_id.setText(str(value))
-                self.label_e_approv.setText("❌")
-            elif metric_name == 'FLOOR':
-                floor_num = int(value)
-                self.lcdNumber_floor.display(floor_num)
-                self.label_ele_3f
+            if device_id[:3] == "ent":
+                if metric_name == 'RFID_ACCESS':
+                    self.le_e_id.setText(str(value))
+                    self.label_e_approv.setText("✅")
+                    
+                elif metric_name == 'RFID_DENY':
+                    self.le_e_id.setText(str(value))
+                    self.label_e_approv.setText("❌")
+            
+                elif metric_name == 'MOTOR':                
+                    print("[DEBUG] device_name: " + device_id[:3] + " metric_name: " + metric_name + " value: " + value)
+                    if value == "-1":
+                        self.label_e_open.setText(" ")
+                        self.le_e_id.clear()
+                        self.label_e_approv.setText(" ")
 
-            elif metric_name == 'MOTOR' and value == '-1':
-                self.le_e_id.clear()
-                self.label_e_approv.setText("")
-            elif metric_name == "LIGHT":
-                try:
+                    elif value == "1":
+                        self.label_e_open.setText("공동현관 열림")
+
+            elif device_id[:3] == "ele":
+                if metric_name == 'FLOOR':
+                    floor_num = int(value)
+                    self.lcdNumber_floor.display(floor_num)
+                    self.label_ele_3f
+
+            elif device_id[:3] == "cur":
+                if metric_name == "LIGHT":
                     self.lcdNumber_lux.display(float(value))
-                except (ValueError, TypeError):
-                    print(f"[ERROR] 잘못된 조도값: {value}")
-            elif metric_name == "CUR_STEP":
-                self._update_curtain_progress(value)
-            elif metric_name == "MOTOR_DIR":
-                self._handle_curtain_direction(value)
+
+                elif metric_name == "CUR_STEP":
+                    self._update_curtain_progress(value)
+
+                elif metric_name == "MOTOR_DIR":
+                    self._handle_curtain_direction(value)
+
         if data_type == "ACK":
-            print("[DEBUG] ACK: " + metric_name + " value: " + value)
-            if metric_name == "FLOOR" or metric_name == "CANCEL":
-                if value == "1":
-                    self.label_ele_1f.setText(" ")
-                elif value == "2":
-                    self.label_ele_2f.setText(" ")
-                elif value == "3":
-                    self.label_ele_3f.setText(" ")
+            if device_id[:3] == "ele":
+                if metric_name == "FLOOR" or metric_name == "CANCEL":
+                    if value == "1":
+                        self.label_ele_1f.setText(" ")
+                    elif value == "2":
+                        self.label_ele_2f.setText(" ")
+                    elif value == "3":
+                        self.label_ele_3f.setText(" ")
 
     def start_polling(self):
         """상태 폴링 시작"""
