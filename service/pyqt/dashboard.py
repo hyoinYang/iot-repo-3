@@ -14,8 +14,8 @@ from_class = uic.loadUiType("./dashboard.ui")[0]
 # Define serial port configurations
 # Adjust the COM port based on your environment
 SERIAL_PORTS = {
-    'elevator': 'COM3',
-    'entrance': 'COM4',
+    'ele_00': 'COM3',
+    'ent_00': 'COM4',
     'curtain': 'COM5',
     'dht_00': '/dev/ttyACM0',
 }
@@ -158,27 +158,29 @@ class WindowClass(QMainWindow, from_class) :
             self.serial_threads[name] = thread
             print(f"Started serial thread for {name} on {port}")
 
+    def entrance_open(self):
+        command = "CMO,MOTOR,1\n"
+        if 'ent_00' in self.serial_threads:
+            self.serial_threads['ent_00'].write(command)
+            self.label_e_approv.setText("✅")
+
     def elevator_1f_call(self):
         command = "CMO,FLOOR,1\n"
-        if 'elevator' in self.serial_threads:
-            self.serial_threads['elevator'].write(command)
+        if 'ele_00' in self.serial_threads:
+            self.serial_threads['ele_00'].write(command)
             self.label_ele_1f.setText("✅")
 
     def elevator_2f_call(self):
         command = "CMO,FLOOR,2\n"
-        if 'elevator' in self.serial_threads:
-            self.serial_threads['elevator'].write(command)
+        if 'ele_00' in self.serial_threads:
+            self.serial_threads['ele_00'].write(command)
             self.label_ele_2f.setText("✅")
 
     def elevator_3f_call(self):
         command = "CMO,FLOOR,3\n"
-        if 'elevator' in self.serial_threads:
-            self.serial_threads['elevator'].write(command)
+        if 'ele_00' in self.serial_threads:
+            self.serial_threads['ele_00'].write(command)
             self.label_ele_3f.setText("✅")
-
-    def entrance_open(self):
-        # This function is connected in the UI but has no logic yet.
-        pass
 
     def control_air(self):
         if 'dht_00' not in self.serial_threads:
@@ -231,9 +233,7 @@ class WindowClass(QMainWindow, from_class) :
             self.hum_state = 0
         self.serial_threads['dht_00'].write(command)
 
-
     def handle_serial_data(self, port, data):
-        # Find which device this data is from
         device_name = None
         for name, p in SERIAL_PORTS.items():
             if p == port:
@@ -244,7 +244,7 @@ class WindowClass(QMainWindow, from_class) :
             print(f"Data from unknown port {port}: {data}")
             return
 
-        if device_name == 'elevator':
+        if device_name == 'ele_00':
             if data == "ACK,FLOOR,1":
                 self.label_ele_1f.setText("")
             elif data == "ACK,FLOOR,2":
@@ -256,17 +256,25 @@ class WindowClass(QMainWindow, from_class) :
                     floor_number = int(data.split(',')[2])
                     self.lcdNumber_floor.display(floor_number)
                 except (ValueError, IndexError) as e:
-                    print(f"Error parsing elevator floor number: {e}")
+                    print(f"Error parsing elevator floor number from data '{data}': {e}")
         
-        elif device_name == 'entrance':
-            # Add logic for entrance device here
-            print(f"Entrance data: {data}")
-            pass
-        
-        elif device_name == 'curtain':
-            # Add logic for curtain device here
-            print(f"Curtain data: {data}")
-            pass
+        elif device_name == 'ent_00':
+            parts = data.split(',')
+            if len(parts) != 3:
+                print(f"[ERROR] invalid entrance data: {data!r}")
+                return
+            
+            data_type, metric_name, value = parts
+            if data_type == "SEN":
+                if metric_name == "RFID_ACCESS":
+                    self.le_e_id.setText(str(value))
+                    self.label_e_approv.setText("✅")
+                elif metric_name == "RFID_DENY":
+                    self.le_e_id.setText(str(value))
+                    self.label_e_approv.setText("❌")
+                elif metric_name == "MOTOR" and value == "-1":
+                    self.le_e_id.clear()
+                    self.label_e_approv.setText("")
         
         elif device_name == 'dht_00':
             try:
@@ -280,12 +288,16 @@ class WindowClass(QMainWindow, from_class) :
                     
                     self.graph_canvas.update_graph(temperature, humidity)
             except Exception as e:
-                print(f"Error in dht_00 data handling: {e}")
+                print(f"Error in dht_00 data handling from data '{data}': {e}")
+        
+        elif device_name == 'curtain':
+            print(f"Curtain data: {data}")
+            pass
 
 
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
-    Dialog = WindowClass()
-    Dialog.show()
+    myWindow = WindowClass()
+    myWindow.show()
     sys.exit(app.exec())
