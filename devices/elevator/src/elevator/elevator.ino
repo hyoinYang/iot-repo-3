@@ -38,6 +38,7 @@ int ele_dst[] = {0, 0};
 int ele_pos = 0;
 byte seven_seg_data_to_display;
 bool floor_report_sent_for_current_pos = false; // Add this new global flag
+unsigned long previous_floor_report_time = 0; // Add this new global variable for 1-second reporting
 
 void sendElevatorModeToPC(ElevatorMode mode) {
   Serial.print("SEN,ELE_DIR,");
@@ -407,6 +408,7 @@ void setup() {
   pinMode(BUTTONTHIRD_PIN, INPUT);
 
   Serial.println("SEN,FLOOR,1");
+  previous_floor_report_time = millis(); // Initialize the new timer for 1-second floor reporting
 
   updateDisplays(ele_LED_pin_arr[ele_pos], seven_seg_digits[fromEleposeToFloor(ele_pos)]);
 }
@@ -451,5 +453,17 @@ void loop() {
       updateElePos();
       previous_time = current_time;
     }
+  }
+
+  // Send current floor every second
+  if (current_time - previous_floor_report_time > 1000) {
+    Serial.print("SEN,FLOOR,");
+    int floor_to_report = fromEleposeToFloor(ele_pos) + 1; // Default
+    if (ele_mode == ElevatorMode::DOWN && ele_pos % 3 != 0) {
+      // If moving down and between floors, report the floor it just left (the one above)
+      floor_to_report = fromEleposeToFloor(ele_pos) + 2;
+    }
+    Serial.println(floor_to_report);
+    previous_floor_report_time = current_time;
   }
 }
