@@ -376,6 +376,19 @@ void handleSerialCommand()
         }
       }
     }
+    else if (cmdType == "CMO" && cmdTarget == "CANCEL")
+    {
+      int floorNum = cmdValue.toInt();
+      if (floorNum >= 1 && floorNum <= 3) {
+        int targetFloor = floorNum - 1;
+        if (LED_stat[targetFloor] == true) {
+          digitalWrite(LED_pin_arr[targetFloor], LOW);
+          LED_stat[targetFloor] = false;
+          Serial.print("Remote cancel for Floor "); Serial.println(targetFloor + 1);
+          assignEleDst();
+        }
+      }
+    }
   }
 }
 

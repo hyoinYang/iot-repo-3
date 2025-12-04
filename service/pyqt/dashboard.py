@@ -195,16 +195,29 @@ class WindowClass(QMainWindow, from_class) :
         self.label_e_approv.setText("✅")
 
     def elevator_1f_call(self):
-        self._send_command('ele_00', "CMO,FLOOR,1\n")
-        self.label_ele_1f.setText("✅")
+        if self.label_ele_1f.text() == "✅":
+            self._send_command('ele_00', "CMO,CANCEL,1\n")
+            self.label_ele_1f.setText("")
+
+        else:
+            self._send_command('ele_00', "CMO,FLOOR,1\n")
+            self.label_ele_1f.setText("✅")
 
     def elevator_2f_call(self):
-        self._send_command('ele_00', "CMO,FLOOR,2\n")
-        self.label_ele_2f.setText("✅")
+        if self.label_ele_2f.text() == "✅":
+            self._send_command('ele_00', "CMO,CANCEL,2\n")
+            self.label_ele_2f.setText("")
+        else:
+            self._send_command('ele_00', "CMO,FLOOR,2\n")
+            self.label_ele_2f.setText("✅")
 
     def elevator_3f_call(self):
-        self._send_command('ele_00', "CMO,FLOOR,3\n")
-        self.label_ele_3f.setText("✅")
+        if self.label_ele_3f.text() == "✅":
+            self._send_command('ele_00', "CMO,CANCEL,3\n")
+            self.label_ele_3f.setText("")
+        else:
+            self._send_command('ele_00', "CMO,FLOOR,3\n")
+            self.label_ele_3f.setText("✅")
 
     def control_air(self):
         states = [(0, "A", "ON", 1), (1, "B", "AUTO", 2), (2, "G", "OFF", 0)]
